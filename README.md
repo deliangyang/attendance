@@ -17,3 +17,11 @@ pip -r requirements.txt
 ```bash
 python main.py
 ```
+
+#### 如何打包
+
+```bash
+python3 -m PyInstaller -F main.py
+```
+
+可执行文件见dist/main.exe
