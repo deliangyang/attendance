@@ -21,6 +21,8 @@ class Writer(object):
         self.style2 = xlwt.XFStyle()
         self.style2.alignment = alignment
 
+        self.re_int = re.compile(r'^\d+\.0$')
+
     def save(self):
         logger.info('write origin data')
         self.write_origin_data()
@@ -43,6 +45,8 @@ class Writer(object):
                         )
                 except Exception as e:
                     logger.error(with_error_stack(e))
+                if self.re_int.match(str(rd)):
+                    rd = rd.replace('.0', '')
                 sheet.write(i, j, rd, self.style2)
 
     def write_overtime(self):

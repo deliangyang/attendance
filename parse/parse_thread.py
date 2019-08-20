@@ -17,6 +17,7 @@ class ParseThread(threading.Thread):
         logger.info("start parse")
 
     def run(self) -> None:
+        ok = False
         try:
             records = Records(self.filename)
             writer = Writer(
@@ -28,6 +29,7 @@ class ParseThread(threading.Thread):
             writer.save()
             logger.info("end parse and wrote")
             os.system("start explorer %s" % os.path.dirname(self.dist))
+            ok = True
         except UnicodeDecodeError as _:
             dlg = wx.MessageDialog(None, '如果是18楼的考勤，请复制保存至另外一个文件', 'Excel表格不符合规范', wx.YES_NO)
             if dlg.ShowModal() == wx.ID_YES:
@@ -37,4 +39,4 @@ class ParseThread(threading.Thread):
             logger.error(with_error_stack(e))
         finally:
             if callable(self.callback):
-                self.callback()
+                self.callback(ok)

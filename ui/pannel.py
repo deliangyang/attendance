@@ -25,21 +25,14 @@ class MainPanel(wx.Panel):
         self.filename = dlg.GetFilename()
         self.dirname = dlg.GetDirectory()
         dlg.Destroy()
-        logger.info({
-            'filename': self.filename,
-            'dirname': self.dirname,
-        })
         self.btn.Disable()
+        self.init_status_bar()
         self.status_bar.SetStatusText(u"状态：处理中...", 0)
         thread = ParseThread(
             self.dirname + os.sep + self.filename,
             self.get_storage_path(),
             callback=self.after_parse)
         thread.start()
-
-    @classmethod
-    def get_desktop_path(cls):
-        return os.path.join(os.path.expanduser("~"), 'Desktop')
 
     def get_storage_path(self):
         dirname = os.path.join(
@@ -48,13 +41,24 @@ class MainPanel(wx.Panel):
         )
         if not os.path.exists(dirname):
             os.makedirs(dirname)
-
         return os.path.join(
             dirname,
             (str(datetime.datetime.now()) + '.xls').replace(' ', '-').replace(':', '')
         )
 
-    def after_parse(self):
+    def after_parse(self, ok):
         self.btn.Enable()
-        self.status_bar.SetStatusText(u"状态：处理完毕", 0)
-        self.status_bar.SetStatusText(u"文件路径：%s" % self.get_storage_path(), 1)
+        if ok:
+            self.status_bar.SetStatusText(u"状态：处理完毕", 0)
+            self.status_bar.SetStatusText(u"文件路径：%s" % self.get_storage_path(), 1)
+        else:
+            self.status_bar.SetStatusText(u"状态：处理失败", 0)
+            self.status_bar.SetStatusText(u"文件路径：", 1)
+
+    @classmethod
+    def get_desktop_path(cls):
+        return os.path.join(os.path.expanduser("~"), 'Desktop')
+
+    def init_status_bar(self):
+        self.status_bar.SetStatusText(u"状态：添加考勤记录", 0)
+        self.status_bar.SetStatusText(u"文件路径：", 1)
