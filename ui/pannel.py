@@ -18,16 +18,17 @@ class MainPanel(wx.Panel):
         self.dirname = ''
 
     def on_get_file(self, e):
-        self.dirname = ''
         dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*.xlsx;*.xls", wx.FD_OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.filename = dlg.GetFilename()
-            self.dirname = dlg.GetDirectory()
-            logger.info({
-                'filename': self.filename,
-                'dirname': self.dirname,
-            })
+        if dlg.ShowModal() == wx.ID_CANCEL:
+            dlg.Destroy()
+            return
+        self.filename = dlg.GetFilename()
+        self.dirname = dlg.GetDirectory()
         dlg.Destroy()
+        logger.info({
+            'filename': self.filename,
+            'dirname': self.dirname,
+        })
         self.btn.Disable()
         self.status_bar.SetStatusText(u"状态：处理中...", 0)
         thread = ParseThread(

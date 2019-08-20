@@ -5,7 +5,7 @@ from utils.logger import logger
 from parse.errror import with_error_stack
 
 
-class Write(object):
+class Writer(object):
 
     def __init__(self, filename: str, data: iter, length: int, origin_sheet: Sheet):
         self.data = data
