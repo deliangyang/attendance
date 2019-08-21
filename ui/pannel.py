@@ -1,7 +1,6 @@
 import wx
 import os
 import datetime
-from utils.logger import logger
 from parse.parse_thread import ParseThread
 
 

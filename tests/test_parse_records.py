@@ -1,6 +1,4 @@
 import unittest
-import pandas
-import xlrd
 from parse.records import Records
 from parse.writer import Writer
 
