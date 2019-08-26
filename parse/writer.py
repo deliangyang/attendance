@@ -85,7 +85,7 @@ class Writer(object):
                 if len(time) < 0:
                     continue
                 time, _ = self.is_take_a_taxi(time)
-                sheet.write(index, int(idx) + 1, " \n".join(time), self.style2)
+                sheet.write(index, int(idx), " \n".join(time), self.style2)
 
     @classmethod
     def is_overtime(cls, time: list) -> (list, int):
