@@ -7,13 +7,14 @@ from parse.errror import with_error_stack
 
 class Writer(object):
 
-    def __init__(self, filename: str, data: iter, length: int, origin_sheet: Sheet):
+    def __init__(self, filename: str, data: iter, length: int, origin_sheet: Sheet, skip_days: list):
         self.data = data
         self.filename = filename
         self.length = length
         self.workbook = xlwt.Workbook(encoding="utf-8")
         self.origin_sheet = origin_sheet
         self.split_time = re.compile(r'(\d{2}:\d{2})')
+        self.skip_days = skip_days
 
         alignment = xlwt.Alignment()
         alignment.wrap = 1
@@ -61,12 +62,18 @@ class Writer(object):
             index += 1
             sheet.write(index, 0, datum['name'])
             sheet.write(index, 1, datum['department'])
+
             total = 0
+            yesterday = (False, -2)
             for times in datum['times']:
                 time, idx = times
+                if idx in self.skip_days:
+                    yesterday = times
+                    continue
                 if len(time) < 0:
                     continue
-                time, ts = self.is_overtime(time)
+                time, ts = self.is_overtime(time, idx, yesterday)
+                yesterday = times
                 sheet.write(index, int(idx) + 2, " \n".join(time), self.style2)
                 total += ts
             sheet.write(index, 2, total)
@@ -80,27 +87,40 @@ class Writer(object):
         for index, datum in enumerate(self.data):
             index += 1
             sheet.write(index, 0, datum['name'])
+            yesterday = (False, -2)
             for times in datum['times']:
                 time, idx = times
                 if len(time) < 0:
                     continue
-                time, _ = self.is_take_a_taxi(time)
+                time, _ = self.is_take_a_taxi(time, idx, yesterday)
+                yesterday = times
                 sheet.write(index, int(idx), " \n".join(time), self.style2)
 
     @classmethod
-    def is_overtime(cls, time: list) -> (list, int):
-        return cls.calc_time(time, '21:00')
+    def is_overtime(cls, time: list, idx: int, yesterday) -> (list, int):
+        return cls.calc_time(time, '21:00', idx, yesterday)
 
     @classmethod
-    def is_take_a_taxi(cls, time: list) -> (list, int):
-        return cls.calc_time(time, '21:30')
+    def is_take_a_taxi(cls, time: list, idx: int, yesterday) -> (list, int):
+        return cls.calc_time(time, '21:30', idx, yesterday)
 
     @classmethod
-    def calc_time(cls, time: list, bound_time: str) -> (list, int):
+    def calc_time(cls, time: list, bound_time: str, idx: int, yesterday) -> (list, int):
         valid_times = []
         times = 0
         t_21, t_00 = True, True
+        yesterday_time, yesterday_idx = yesterday
         for t in time:
+            if int(idx) - int(yesterday_idx) == 1 and yesterday_time is not False and len(yesterday_time) > 0:
+                try:
+                    if int(str(t).replace(':', '')) + 2400 - int(str(yesterday_time[-1]).replace(':', '')) <= 100:
+                        continue
+                except Exception as e:
+                    logger.error({
+                        'e': e,
+                        'yesterday': yesterday,
+                        'time': time,
+                    })
             if t >= bound_time and t_21:
                 valid_times.append(t)
                 times += 1
