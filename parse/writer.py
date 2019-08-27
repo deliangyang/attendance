@@ -64,18 +64,25 @@ class Writer(object):
             sheet.write(index, 1, datum['department'])
 
             total = 0
-            yesterday = (False, -2)
+            yesterday = ([], -2)
             for times in datum['times']:
                 time, idx = times
-                if idx in self.skip_days:
-                    yesterday = times
+                if len(time) <= 0:
                     continue
-                if len(time) < 0:
-                    continue
-                time, ts = self.is_overtime(time, idx, yesterday)
+                # 今天是排除的日子，昨天不是
+                if idx in self.skip_days and idx - 1 not in self.skip_days:
+                    ye_t, _ = yesterday
+                    if not self.has_overtime(ye_t) and self.is_early_morning_over_time(time):
+                        # 昨天没有显示加班, 今天凌晨有加班
+                        sheet.write(index, int(idx) + 2, " \n".join([time[0]]), self.style2)
+                        total += 1
+                elif idx in self.skip_days:
+                    pass
+                else:
+                    time, ts = self.is_overtime(time, idx, yesterday)
+                    sheet.write(index, int(idx) + 2, " \n".join(time), self.style2)
+                    total += ts
                 yesterday = times
-                sheet.write(index, int(idx) + 2, " \n".join(time), self.style2)
-                total += ts
             sheet.write(index, 2, total)
 
     def write_take_taxi(self):
@@ -87,7 +94,7 @@ class Writer(object):
         for index, datum in enumerate(self.data):
             index += 1
             sheet.write(index, 0, datum['name'])
-            yesterday = (False, -2)
+            yesterday = ([], -2)
             for times in datum['times']:
                 time, idx = times
                 if len(time) < 0:
@@ -111,7 +118,7 @@ class Writer(object):
         t_21, t_00 = True, True
         yesterday_time, yesterday_idx = yesterday
         for t in time:
-            if int(idx) - int(yesterday_idx) == 1 and yesterday_time is not False and len(yesterday_time) > 0:
+            if int(idx) - int(yesterday_idx) == 1 and len(yesterday_time) > 0:
                 try:
                     if int(str(t).replace(':', '')) + 2400 - int(str(yesterday_time[-1]).replace(':', '')) <= 100:
                         continue
@@ -130,3 +137,17 @@ class Writer(object):
                 times += 1
                 t_00 = False
         return valid_times, times
+
+    @classmethod
+    def has_overtime(cls, date_times: list) -> bool:
+        for date_time in date_times:
+            if '21:00' <= date_time <= '23:59':
+                return True
+        return False
+
+    @classmethod
+    def is_early_morning_over_time(cls, date_times: list):
+        for date_time in date_times:
+            if '00:00' <= date_time <= '05:00':
+                return True
+        return False
